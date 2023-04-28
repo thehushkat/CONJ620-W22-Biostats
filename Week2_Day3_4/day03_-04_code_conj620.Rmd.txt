@@ -1,0 +1,958 @@
+---
+title: "Days 3-4 code: Chapters 3 & 4 Data Wrangling (Modern Dive)"
+author: "Meike Niederhausen"
+date: "CONJ 620"
+output:
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: no
+    theme: cerulean
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Look up at the YAML! I added some new options up there. Take a look at the knitted html file to see what they do. See https://jminnier-berd-r-courses.netlify.com/03-rmarkdown/03_rmarkdown_slides.html#46 for explanations of these options.
+
+# Instructions for today's class
+
+
+1. Create a folder for today's class on your computer (i.e. `Day3-4`)
+  - create a _subfolder_ within it called `data`
+1. Download data from Sakai:
+    - `small_data.csv`
+    - `yrbss_demo.csv`
+    - `yrbss_qn.csv`
+1. Save the csv files to the `data` subfolder you created
+1. Download the slides and code files, and put them in the main folder `Day3-4`
+1. Open the code RMarkdown file `day03_-04_code_conj620.Rmd`
+1. Install and load the new packages `janitor` and `lubridate` in Section 1.1. To run the `install.packages()` code, first delete the `#` in front of the code. After installing, add back in the `#` so that these lines do not get run when knitting the file.
+
+## Load (& install) packages
+
+* Note that the R chunk includes `message = FALSE` in the first line. 
+* This is so that the messages that appear when loading the packages don't show up in your knitted html file.
+
+```{r message = FALSE}
+library(tidyverse)
+# install.packages("janitor")
+library(janitor)
+# lubridate already installed with tidyverse
+library(lubridate)
+```
+
+
+# R Projects (.Rproj file)
+
+__Use R projects to keep everything together__ ([read this](https://r4ds.had.co.nz/workflow-projects.html))
+
+- A project keeps track of your coding environment and file structure
+- Create an R project for each data analysis project, assignment, etc.
+- __An R project is associated with a directory folder__
+  + Keep all project files in one folder, such as: 
+  + data, code, output (plots, analysis results, etc.) 
+    - When accessing data, only use _relative paths_ - never absolute paths!
+    + relative (good): `read_csv("data/demo_data.csv")`
+    + absolute (bad): `read_csv("/home/yourname/Documents/stuff/demo_data.csv")`
+
+
+__Advantages of using projects__
+
+- keep everything together
+- standardized file paths
+- a whole folder can be shared and run on another computer
+- when you open a project everything is as you left it
+- you can have multiple projects open to work on different analyses
+
+
+## Learn more about projects and why you should *always* be using them (read through these links after class) 
+
+Below are various resources to learn more about RStudio "projects."
+
+* [RStudio Projects and Working Directories: A Beginner’s Guide](https://www.r-bloggers.com/2020/01/rstudio-projects-and-working-directories-a-beginners-guide/)
+    * What is a RStudio project, and why?
+    * Easy file path referencing with RStudio projects
+    * Structuring your working directory 
+* R for Data Science
+    * Excellent book for learning R for data science by by Wickham & Grolemund
+    * See [Chapter 8: Workflow: projects](https://r4ds.had.co.nz/workflow-projects.html) for 
+      * [What is real?](https://r4ds.had.co.nz/workflow-projects.html#what-is-real)
+      * [Where does your analysis live?](https://r4ds.had.co.nz/workflow-projects.html#where-does-your-analysis-live)
+      * [Paths and directories](https://r4ds.had.co.nz/workflow-projects.html#paths-and-directories)
+      * [RStudio projects](https://r4ds.had.co.nz/workflow-projects.html#rstudio-projects)
+      * [Summary](https://r4ds.had.co.nz/workflow-projects.html#summary)
+* [RStudio's directions on creating projects](https://support.rstudio.com/hc/en-us/articles/200526207-Using-RStudio-Projects)
+  * This page provides concise directions, but not much motivation on why you should be using projects. 
+* Jenny Bryant's STAT 545 class notes
+    * Check out Chapter 2 R basics and workflows https://stat545.com/r-basics.html
+    * Section 2.2: [Workspace and working directory](https://stat545.com/r-basics.html#workspace-and-working-directory)
+    * Section 2.3: [RStudio projects](https://stat545.com/r-basics.html#rprojs)
+
+### Video on how to create an R project
+
+This video demonstrates how to create an R project, and how to open RStudio using the project file. 
+
+[The Basics of Projects in RStudio](https://www.youtube.com/watch?v=hKoSJGWnFFA) by Sam Burer  
+
+
+## Create a new R project
+
+See slides for instructions. 
+
+([Read this for more](https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects))
+
+- [Video on projects in R, most useful info in minutes 2:00-13:00](https://rstudio.com/resources/webinars/managing-part-1-projects-in-rstudio/)
+
+
+## Check out the new project
+
+* Examine the files within the RStudio Files pane
+* They should include the files that were already in the folder,
+  * plus the new project file called `Day3-4.Rproj`
+* Above the list of files, is the file path, showing where your folder is located  
+(i.e. `Home/CONJ_620_class/Days3-4`)
+
+
+# About the `yrbss` data
+
+Data from the CDC's [Youth Risk Behavior Surveillance System (YRBSS) ](https://www.cdc.gov/healthyyouth/data/yrbs/index.htm)
+
+<!-- - complex survey data -->
+- National school-based survey 
+    + conducted by CDC and state, territorial, and local education and health agencies and tribal governments
+
+- Monitors six categories of health-related behaviors 
+    + that contribute to the leading causes of death and disability among youth and adults 
+    + including alcohol & drug use, unhealthy & dangerous behaviors, sexuality, and physical activity
+    + see [Questionnaires](https://www.cdc.gov/healthyyouth/data/yrbs/questionnaires.htm)
+
+- The data in `yrbss_demo.csv` are a subset of data in the R package [`yrbss`](https://github.com/hadley/yrbss), which includes YRBSS from 1991-2013
+
+
+
+## Import `yrbss` data from csv as a tibble (*do this*)
+
+- We will use `readr` package functions to import data (as a tibble)
+- `readr` is one of the packages that's part of the `tidyverse`, 
+  - and it gets loaded using `library(tidyverse)`
+  - `readr` [cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/main/data-import.pdf) and https://r4ds.had.co.nz/data-import.html
+- For Excel files, use `readxl` package's `read_excel()` command
+
+```{r}
+# library(readr)  # not needed since readr already loaded with tidyverse 
+demo_data <- read_csv("data/yrbss_demo.csv")  # csv files needs to be in data folder
+demo_data
+```
+
+---
+
+## Examine the data
+
+* Run the code below in your own R session
+* Unless otherwise mentioned, commands are from base R
+
+(Note that the first line of the code chunk below has `results=FALSE` in the code chunk options. This prevents the results from the code being shown in the knitted file.)
+
+```{r, results=FALSE}
+demo_data
+head(demo_data)
+dim(demo_data)
+names(demo_data)
+summary(demo_data)
+str(demo_data)
+
+glimpse(demo_data)   # from tibble package
+```
+
+
+
+# Tibbles
+
+## Data frames vs. tibbles
+
+"Tibbles are modern takes on data frames"
+
+* If you used older versions of R (pre v. 4), you would've noticed more differences between tibbles and data frames
+* See https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html for comparisons and https://r4ds.had.co.nz/tibbles.html for more tibble info.
+
+* How are the data frame and tibble below different?
+
+```{r}
+data.frame(name=c("Sue","Ana","Jose"), 
+    rank = 1:3, age = c(35.5, 25, 58),
+    city=c(NA,"New York","LA"))
+
+tibble(name=c("Sue","Ana","Jose"), 
+    rank = 1:3, age = c(35.5, 25, 58),
+    city=c(NA,"New York","LA"))
+```
+
+
+# Tidyverse & the pipe `%>%`
+
+The pipe operator `%>%` strings together commands to be performed sequentially
+
+```{r}
+demo_data %>% head(n=3)      # pronounce %>% as "then"
+```
+
+- Always _first list the tibble_ that the commands are being applied to
+- Can use __multiple pipes__ to run multiple commands in sequence
+    + What does the following code do?
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+
+demo_data %>% head(n=3) %>% summary()
+```
+
+
+
+
+# Subsetting data
+
+## `filter()` rows that satisfy specified conditions
+
+- math: `>`,  `<`,  `>=`,  `<=`
+-  double = for "is equal to":  `==`
+- != (not equal)
+-  `&` (and) 
+-  `|` (or)
+- `is.na()` to filter based on missing values
+- `%in%` to filter based on group membership
+- `!` in front negates the statement, as in 
+    + `!is.na(age)` 
+    + `!(grade %in% c("9th","10th"))`
+
+```{r}
+demo_data %>% filter(bmi > 20)
+```
+
+
+### `filter()` practice
+
+What do these commands do? Try them out:
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+
+demo_data %>% filter(bmi < 5)
+demo_data %>% filter(bmi/stweight < 0.5)    # can do math within filter command
+demo_data %>% filter((bmi < 15) | (bmi > 50))
+demo_data %>% filter(bmi < 20, stweight < 50, sex=="Male") # filter on multiple variables
+
+demo_data %>% filter(record == 506901) # note the use of == instead of just =
+demo_data %>% filter(sex == "Female")
+demo_data %>% filter(!(grade == "9th"))
+demo_data %>% filter(grade %in% c("10th", "11th"))
+
+demo_data %>% filter(is.na(bmi))
+demo_data %>% filter(!is.na(bmi))
+```
+
+**Note**: In the examples above, no changes are being made to the original dataset `demo_data`, and the filtered data are not saved. Use `<-` to save the filtered data, such as `demo_data_new <- demo_data %>% filter(bmi < 5)`.
+
+
+
+## `select()` to choose columns
+
+- select columns (variables)
+- no quotes needed around variable names
+- can be used to rearrange columns
+- uses special syntax that is flexible and has many options
+
+```{r}
+demo_data %>% select(record, grade)
+```
+
+### Column selection syntax options
+
+There are many ways to select a set of variable names (columns):
+
+- `var1:var20`: all columns from `var1` to `var20`
+- `one_of(c("a", "b", "c"))`: all columns with names in the specified character vector of names
+
+- __Removing columns__
+    + `-var1`: remove the column`var1`
+    + `-(var1:var20)`: remove all columns from `var1` to `var20`
+
+- __Select by specifying text within column names__
+    + `contains("date")`, `contains("_")`: all variable names that contain the specified string of characters
+    + `starts_with("a")` or `ends_with("last")`: all variable names that start or end with the specified string
+
+See other examples in the [data wrangling cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf).
+
+
+### `select()` practice
+
+Which columns are selected & in what order using these commands?  
+First guess and then try them out.
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+
+demo_data %>% select(record:sex)
+demo_data %>% select(one_of(c("age","stweight")))
+
+demo_data %>% select(-grade,-sex)
+demo_data %>% select(-(record:sex))
+
+demo_data %>% select(contains("race"))
+demo_data %>% select(starts_with("r"))
+demo_data %>% select(-contains("r"))
+```
+
+
+# `relocate()` columns to move them around
+
+- change the order of columns in dataset
+- specified column names get put first, 
+  - and unspecified column names after that in original order
+- no quotes needed around variable names
+- similar options as with `select()`, 
+  - plus special ones such as `.before` and `.after`
+
+```{r}
+demo_data %>% relocate(grade, sex)
+```
+
+
+
+## `relocate()` practice
+
+What order are the columns in using these commands?  
+First guess and then try them out.
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+demo_data %>% relocate(age:race7)
+
+demo_data %>% relocate(where(is.character))
+demo_data %>% relocate(where(is.numeric))
+
+demo_data %>% relocate(bmi,.before = race4)
+demo_data %>% relocate(race7, .after = grade)
+demo_data %>% relocate(age, .after = last_col())
+```
+
+
+
+# `rename()` columns
+
+- renames column variables
+
+```{r}
+demo_data %>% rename(id = record)   # order: new_name = old_name
+```
+
+
+
+# `mutate()`
+
+Use `mutate()` to add new columns to a tibble
+* Many options in how to define new column of data
+
+
+```{r}
+newdata <- demo_data %>% 
+  mutate(height_m = sqrt(stweight / bmi))   
+# use = to define new a variable within mutate (not <- or ==) 
+
+newdata %>% select(record, bmi, stweight, height_m)
+```
+
+
+
+
+## `mutate()` practice
+
+What do the following commands do?  
+First guess and then try them out.
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+
+demo_data %>% mutate(bmi_high = (bmi > 30))
+
+demo_data %>% mutate(male = (sex == "Male"))
+demo_data %>% mutate(male = 1 * (sex == "Male"))
+
+demo_data %>% mutate(grade_num = as.numeric(str_remove(grade, "th")))
+```
+
+
+
+## `case_when()` within `mutate()`
+
+Use `case_when()` to create multi-valued variables that depend on an existing column 
+- Example: create BMI groups based off of the `bmi` variable
+```{r}
+demo_data2 <- demo_data %>%
+  mutate(
+    bmi_group = case_when(
+      bmi < 18.5 ~ "underweight",               # condition ~ new_value
+      bmi >= 18.5 & bmi <= 24.9 ~ "normal",
+      bmi > 24.9 & bmi <= 29.9 ~ "overweight",
+      bmi > 29.9 ~ "obese")
+    )
+demo_data2 %>% select(bmi, bmi_group) %>% head()
+```
+
+
+
+
+# `arrange()` to order rows
+
+Use `arrange()` to order the rows by the values in specified columns
+
+```{r}
+demo_data %>% arrange(bmi, stweight) %>% select(bmi, stweight) %>% head(n=3)
+
+demo_data %>% arrange(desc(bmi), stweight) %>% select(bmi, stweight) %>% head(n=3)
+```
+
+
+
+
+
+# Summarizing data
+
+## Frequency tables with `count()`
+
+* `count` is from the `dplyr` package
+* the output is a long tibble, and not a "nice" table
+```{r}
+demo_data %>% count(grade)
+```
+
+```{r}
+demo_data %>% count(grade, sex)
+```
+
+
+## `tabyl` function
+
+### Install & load `janitor` package
+
+```{r eval=FALSE}
+# remove eval=FALSE from the chunk header for the output to appear in your html output
+
+# install.packages("janitor") # do this just once
+library(janitor)
+```
+
+Remember: 
+
+* you only have to install a package once, 
+* but you need to load it every time you use R and in particular within your Rmd file.
+
+
+### Frequency tables: `janitor` package's `tabyl` 
+
+```{r}
+# default table
+demo_data %>% tabyl(grade)
+```
+
+```{r}
+# output can be treated as tibble
+demo_data %>% tabyl(grade) %>% 
+  select(-n)
+```
+
+
+`adorn_` your table!
+```{r}
+demo_data %>%
+  tabyl(grade) %>%
+  adorn_totals("row") %>% 
+  adorn_pct_formatting(digits=2)  
+```
+
+### Contingency tables (two-way tables)
+
+* **Contingency tables** summarize data for two categorical variables
+  * with each value in the table representing the number of times  
+  a particular combination of outcomes occurs
+
+* **Row & column totals** added with `adorn_totals` option
+  * Can choose to include row and/or column totals
+
+
+```{r}
+demo_data %>% 
+  tabyl(grade, sex) %>% #<<
+  adorn_totals(c("row", "col")) #<<
+```
+
+- Base R has a `table` function, but it is clunkier and the output is not a data frame. 
+
+- Notice `grade` is not sorted in a pleasing way. We will learn how to deal with this when we discuss `factors` as a data type in R.
+
+#### Contingency tables with percentages
+
+```{r}
+demo_data %>% tabyl(grade, sex) %>%
+  adorn_percentages(denominator = "col") %>% 
+  adorn_totals("row") %>% 
+  adorn_pct_formatting(digits = 1) %>% 
+  adorn_ns() 
+```
+
+- See the [tabyl vignette](https://cran.r-project.org/web/packages/janitor/vignettes/tabyls.html) for more information, adorn options, & 3-way `tabyl`s
+
+
+## Numerical data summaries: `summarize()`
+
+- We can summarize data as a whole, or in groups with `group_by()`
+- `group_by()` is very powerful, see [data wrangling cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
+
+```{r}
+# summary of all data as a whole
+demo_data %>% 
+  summarize(
+    bmi_mean = mean(bmi, na.rm = TRUE), 
+    bmi_sd = sd(bmi, na.rm = TRUE)
+    ) 
+```
+
+What does `na.rm = TRUE` do and what happens if we leave it out?
+
+
+```{r}
+# summary by group variable
+demo_data %>% group_by(grade) %>% 
+  summarize(n_grade = n(), 
+      bmi_mean =mean(bmi, na.rm = TRUE),
+      bmi_sd = sd(bmi, na.rm = TRUE))
+```
+
+
+### `summarize(across())`
+
+- Can use `across()` to summarize multiple variables ([more examples](https://www.tidyverse.org/blog/2020/04/dplyr-1-0-0-colwise/))
+
+```{r}
+demo_data %>%
+  summarize(
+    across(c(bmi, stweight), 
+           mean, na.rm = TRUE) 
+    )
+```
+
+Same summary without `across()`
+
+```{r}
+demo_data %>% 
+  summarize(
+    bmi = mean(bmi, na.rm = TRUE),
+    stweight = 
+      mean(stweight, na.rm = TRUE)
+    )
+```
+
+
+- Can also use `across()` to summarize multiple variables *and* functions ([more examples](https://www.tidyverse.org/blog/2020/04/dplyr-1-0-0-colwise/))
+
+```{r}
+demo_data %>% 
+  summarize(
+    across(c(bmi, stweight),   
+           c(m = mean, sd = sd), na.rm = TRUE)  
+    ) 
+```
+
+
+- Can also use `across()` to summarize based on true/false conditions ([more examples](https://www.tidyverse.org/blog/2020/04/dplyr-1-0-0-colwise/))
+
+
+```{r}
+demo_data %>%
+  summarize(
+    across(where(is.character), 
+           n_distinct))
+
+demo_data %>%
+  summarize(across(where(is.numeric), 
+            min, na.rm = TRUE))
+```
+
+
+
+# Combining data sets
+
+
+## Rows (cases): paste data below each other 
+
+`bind_rows()` combines rows from different data sets  
+& accounts for different column names
+
+```{r, echo=FALSE}
+data1 <- tibble(id = 1:2, name = c("Nina","Yi"), height=c(2, 1), age=c(4,2))
+data2 <- tibble(id = 7:9, name = c("Bo","Al","Juan"), height=c(2, 1.7, 1.8), years=c(3,1,2))
+```
+
+```{r}
+data1 # "toy" dataset
+```
+
+```{r}
+data2 # another "toy" dataset
+```
+
+
+```{r}
+bind_rows(data1, data2, .id = "group")  
+```
+
+
+## Combining (joining) columns from relational data sets
+
+### *`join`*ing columns from different data sets
+
+- `Join` uses overlapping or selected columns to combine two or more data sets.
+- Also called "merging" or "mutating join". 
+- Function names are based off of SQL operations for databases.
+
+
+See <a href="https://github.com/gadenbuie/tidyexplain">Tidy Animated Verbs</a>.
+
+#### `inner_join()`
+
+<span style="color:red">`inner_join()`</span>  
+Join data.  
+Retain only rows with matches.
+
+#### `full_join()`
+
+<span style="color:red">`full_join()`</span>  
+Join data.  
+Retain all values, all rows.
+
+---
+
+#### `left_join()`
+
+<span style="color:red">`left_join()`</span>  
+Join matching values from y to x
+
+---
+
+#### `right_join()`
+
+<span style="color:red">`right_join()`</span>  
+Join matching values from x to y
+
+
+
+### Join example with YRBSS data
+
+Let's merge demographics (`demo_data`) and questionnaire (`qn_data`) data together.
+
+#### Load data
+
+- Load datasets using code below, and look at your _Environment_ tab to make sure `demo_data` is loaded
+
+```{r, results=FALSE}
+demo_data <- read_csv("data/yrbss_demo.csv")  # this is already loaded
+
+qn_data <- read_csv("data/yrbss_qn.csv")
+```
+
+#### Data dictionary for `qn_data`
+
+Survey questions in `qn_data`
+
+- q8 = How often wear bicycle helmet
+- q12 = Texted while driving
+- q31 = Ever smoked
+- qn24 = Bullied past 12 months
+
+
+#### Join example with YRBSS data
+
+Let's merge demographics (`demo_data`) and questionnaire (`qn_data`) data together.
+
+First, check what column names do these datasets have in common:
+
+```{r}
+colnames(demo_data)
+colnames(qn_data)
+intersect(colnames(demo_data), colnames(qn_data)) #<<
+```
+
+
+### Example 1: Merge all data from both together
+
+Let's do a full join so that we keep all data from both datasets
+
+```{r}
+merge1 <- 
+  full_join(demo_data, qn_data, 
+            by = "record")
+
+# Check dimensions of original and new datasets
+```
+
+```{r}
+dim(merge1);dim(demo_data);dim(qn_data) 
+```
+
+```{r}
+merge1
+```
+
+
+### Example 2: Add `demo_data` to the `qn_data`
+
+Let's add the demographics data to the questionnaire data, excluding the extra ID's from the demographics data
+
+```{r}
+merge2 <- 
+  left_join(qn_data, demo_data, 
+            by = "record")
+
+# Check dimensions of original and new datasets
+```
+
+```{r}
+dim(merge2);dim(demo_data);dim(qn_data) 
+```
+
+```{r}
+merge2
+```
+
+
+## Check which ID's are in each data set
+
+* In previous example slides we only checked the dimensions of the original and merged datasets to make sure they made sense. 
+* We should also check which ID's (`records`) are included in the merged data
+
+```{r}
+length(unique(demo_data$record))
+length(unique(qn_data$record)) 
+length(unique(merge1$record)) #full_join
+```
+
+
+```{r}
+length(unique(merge2$record)) #left_join
+
+length(setdiff(demo_data$record, 
+               qn_data$record))
+length(setdiff(qn_data$record, 
+               demo_data$record))
+```
+
+
+
+### Which columns will be used to join?
+
+- If no columns are specified to join by, then *all* overlapping (intersecting) column names will be used
+- Often we want to specify which columns to use, 
+    + and also how to rename duplicated columns that were not merged
+
+
+
+# Tidy Data
+
+
+## What are tidy data?
+
+1. Each variable forms a column
+2. Each observation forms a row 
+3. Each value has its own cell
+
+## Example 1
+
+### Untidy data
+
+```{r}
+untidy_data <- tibble(
+  name = c("Ana","Bob","Cara"),
+  meds = c("advil 600mg 2xday","tylenol 650mg 4xday", "advil 200mg 3xday")
+)
+untidy_data
+```
+
+
+### Tidy data
+
+```{r}
+untidy_data %>% 
+  separate(col = meds, into = c("med_name","dose_mg","times_per_day"), sep=" ") %>%
+  mutate(times_per_day = as.numeric(str_remove(times_per_day, "xday")),
+         dose_mg = as.numeric(str_remove(dose_mg, "mg")))
+```
+
+## Example 2
+
+### Untidy data
+
+```{r}
+untidy_data2 <- tibble(
+  name = c("Ana","Bob","Cara"),
+  wt_07_01_2018 = c(100, 150, 140),
+  wt_08_01_2018 = c(104, 155, 138),
+  wt_09_01_2018 = c(NA, 160, 142)
+)
+untidy_data2
+```
+
+## Tidy data
+
+Today you will learn how to make the data longer!
+
+```{r}
+untidy_data2 %>% 
+  pivot_longer(-name, names_to = "date", values_to = "weight") %>%
+  mutate(date = str_remove(date,"wt_"),
+         date = dmy(date))     # dmy() is a function in the lubridate package
+```
+
+
+## Wide vs. long data
+
+### Example wide dataset
+
+Copy and paste the code below into R to create this example dataset
+
+```{r}
+SBP_wide <- tibble(id = letters[1:4],
+                     sex = c("F", "M", "M", "F"),
+                     SBP_v1 = c(130, 120, 130, 119),
+                     SBP_v2 = c(110, 116, 136, 106),
+                     SBP_v3 = c(112, 122, 138, 118))
+SBP_wide
+```
+
+- What do you think the data in the table are measures of?
+- How can we tell the data are wide?
+
+
+## Wide to long: `pivot_longer()`
+
+```{r}
+SBP_wide
+```
+
+For `pivot_longer` we need to __specify__:
+
+- __cols__: which columns to make long
+- __names_to__: the name of the column that will consist of the _column names_ of data being made long
+- __values_to__: the name of the column that will be created from the data stored in the _cell values_
+
+```{r}
+SBP_long <- SBP_wide %>% 
+  pivot_longer(
+    cols=c(SBP_v1,SBP_v2,SBP_v3), 
+    names_to = "visit", 
+    values_to = "SBP")
+SBP_long
+```
+
+## Long to wide: `pivot_wider()`
+```{r}
+SBP_long
+```
+
+
+For `pivot_wider` we need to __specify__:
+
+- __names_from__: which column contains the names for the *new columns* 
+- __values_from__: which column contains the values that will fill in the _cell values_
+    
+```{r}
+SBP_wide2 <- SBP_long %>% 
+  pivot_wider(names_from = "visit", 
+              values_from = "SBP")
+SBP_wide2
+```
+
+
+### Clean up `visit` column in the long data 
+
+
+```{r}
+SBP_long
+```
+
+*Goal*: remove the string "`SBP_`" from the `visit` variable's values.
+
+
+#### **Method #1:** tidy the `visit` column *after* making the data long
+
+```{r}
+SBP_long2 <- SBP_long %>% 
+  mutate(
+    visit = str_replace(
+      visit,
+      pattern = "SBP_",
+      replacement = "")
+    ) 
+SBP_long2
+```
+
+
+Remarks:
+
+1. Note that `mutate` is replacing the existing `visit` column with new values
+1. If I wanted to keep the original `visit` column instead of overwriting it, I would call the new column something else, such as `visit_clean`
+1. Within `str_replace()`, double quotes need to be used around the characters specifying 1) the string of text to replace (`"SBP_"`) and 2) what to replace the text with, where `""` is used for *no text*
+1. Previously I used `str_remove()` in an example. That would have worked here as well:
+`mutate(visit = str_remove(visit,"SBP_"))` 
+
+
+
+#### **Method #2:** tidy the `visit` column *while* making the data long
+
+```{r}
+SBP_long3 <- SBP_wide %>% 
+ pivot_longer(cols=c(SBP_v1,SBP_v2,SBP_v3), 
+              names_to = "visit", 
+              names_prefix = "SBP_", 
+              values_to = "SBP")
+SBP_long3
+```
+
+
+Remarks:
+
+1. Note the new parameter `names_prefix` specifying what the prefix is that needs to be stripped.
+1. More complex `pivot_longer()` examples are shown at https://tidyr.tidyverse.org/articles/pivot.html
+
+
+
+### Specifying `cols` in `pivot_longer`
+
+
+In the example creating `SBP_long`, the columns to make the tibble longer by were explicitly listed using `cols=c(SBP_v1,SBP_v2,SBP_v3)`.
+
+```{r}
+SBP_long <- SBP_wide %>% 
+ pivot_longer(cols=c(SBP_v1,SBP_v2,SBP_v3), 
+              names_to = "visit", 
+              values_to = "SBP")
+SBP_long
+```
+
+
+However, we can specify the columns in many different ways, just like with `select()`:
+
+* `cols = c(SBP_v1:SBP_v3)`
+* `cols = c(-id, -sex)`
+* `cols = starts_wth("SBP")`
+* `cols = contains("SBP")`
+
+
+
+
+
