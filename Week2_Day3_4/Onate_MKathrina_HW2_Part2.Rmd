@@ -1,0 +1,285 @@
+---
+title: "HW 2: CONJ 620 W22"
+author: "M. Kathrina Onate"
+date: "Due Wed 1/19/22"
+output:
+  html_document:
+    theme: lumen
+    toc: yes
+    toc_float:
+      collapsed: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE, message = FALSE}
+library(tidyverse)
+library(janitor)
+library(knitr)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE, fig.height = 3, fig.width = 5)
+```
+
+
+## Directions
+
+* Please upload your homework to Sakai. Upload both your .Rmd code file and the knitted .html file.
+    + If you do not upload the html file of your knitted Rmd file, 20 (out of 100) points will be deducted from your homework grade. _If there is an error with code in a code chunk that is preventing the file from knitting, then comment out that code and make a note that it's not running._ 
+* The questions are numbered 1-14. Please do not use `(@)` in your edits to this file so that the exercise numbering does not change!
+* For each question, make sure to include all code and resulting output in the html file to support your answers. Answers to questions do not need be lengthy, but thoughtful and descriptive. 
+
+> Tip: It is a good idea to try kitting your document from time to time as you go along!  Note that knitting automatically saves your Rmd file and knitting frequently helps you catch your errors more quickly.
+
+# Hypothyroidism data background
+
+* The data are from a random sample of patients from the study described below.
+* _Effects of Altering Levothyroxine Dose on Energy Expenditure and Body Composition in Subjects Treated With LT4_ by Samuels et al. (J Clin Endocrinol Metab, November 2018, 103(11):4163–4175). 
+
+From the paper:
+
+> __Background:__ It is unclear whether variations in thyroid status within or near the reference range affect energy expenditure, body mass, or body composition.
+
+> __Methods:__ 138 subjects treated with levothyroxine (LT4) for hypothyroidism with normal TSH levels underwent measurement of total, resting, and physical activity energy expenditure; thermic effect of food; substrate oxidation; dietary intake; and body composition. They were assigned to receive an unchanged, higher, or lower LT4 dose in randomized, double-blind fashion, targeting one of three TSH ranges (0.34 to 2.50, 2.51 to 5.60, or 5.61 to 12.0 mU/L). The doses were adjusted every 6 weeks to achieve target TSH levels. Baseline measures were reassessed at 6 months.
+
+# Load the data
+
+The data are in the file `tsh_hw2.csv`.
+
+```{r}
+tsh <- read_csv("data/tsh_hw2.csv")
+tsh
+```
+
+
+
+Explore the dataset. 
+
+(@) __<font color="green">How many observations and variables are included in this dataset? Are there repeated measures amongst the patients? How did you determine this?</font>__
+ <font color="purple">Answers are correct.
+ <br>I think that was really clever to use the dimensions and unique ID info to answer this question! Considering that I am more of a visual learner I really wanted to look at the spreadsheet/csv first because I wouldn't have chosen to look for a unique ID. I guess my question is: what if you get a .csv data that has inconsistent labeling? I guess unique ID wouldn't be useful there... that being said, I'll definitely use that more often.</font>
+
+<b>Answers in Part 1</b>
+```{r}
+names(tsh)
+```
+There are `r ncol(tsh)` variables and `r nrow(tsh)` observations in the `tsh` dataset.
+If we are to look at the tsh tibble printed above the first question, you'll be able to see that each ID appears twice, seemingly measuring all variables but at different timepoints: either at baseline or endpoint. Therefore, the patient does have repeated measures, just at different timepoints.
+
+# Data wrangling
+
+(@) __<font color="green">Make a table of the values in the `baseline_group` group variable. Add a new variable to the dataset called `TSH_group_baseline`, which renames the levels of `baseline_group` so that 1 is now `LowNormal` and 2 is `HighNormal`.</font>____
+<br><font color = "purple">Grumble grumble grumble. Looks like there was an issue with my case_when() part in my function. Correction below</font>
+
+```{r}
+#Just making a table????
+tsh %>% tabyl(baseline_group)
+
+#Adding a new column to the original dataset and saving it as something new
+Answer_2 <- tsh %>% mutate(
+  TSH_group_baseline = case_when(
+    baseline_group == 1 ~ "LowNormal",
+    baseline_group == 2 ~ "HighNormal")
+  )
+
+#Print
+Answer_2 %>% tabyl(baseline_group, TSH_group_baseline)
+```
+
+
+(@) __<font color="green">Create a new dataset that only includes the variables `id`, `time`, `TSH_group_baseline`, and `tsh`. Check that your code did what you expected it to.</font>__
+<br><font color="purple">Answer is correct. But next time, much like what I said in Q2, to print out the answer with something more simple like dimensions or names.</font>
+
+
+<b>Answer in Part 1</b>
+```{r}
+#Creating a table called 'Answer_3'
+Answer_3 <- Answer_2 %>% select(id, time, TSH_group_baseline, tsh)
+
+#Printing
+Answer_3
+```
+
+
+## Make data wide
+
+* In this section we are going to use two different ways to make the long (by time point) data wide, using the smaller dataset created in the previous problem.
+* The goal is to create a dataset with separate columns for the baseline and endpoint TSH values.
+
+### Method 1
+
+(@) __<font color="green">Create two separate datasets, where one is restricted to the baseline values and the other is restricted to the endpoint values. Rename the `tsh` variable in the two datasets as `tsh_baseline` and  `tsh_endpoint`, respectively. Check that your code did what you expected it to.</font>__
+<br><font color="purple">Answer is correct?? <b>Wait, is what you mean by "restricted to 'X' values mean it wasn't the whole row, of baseline/endpoint, but just the baseline/endpoint values??? OH....?</b> What's interesting though is that your code did not include the selected columns/variables. My initial code did not have this either but it did in naturally. I just included it for myself afterwards so I can see what the code is doing. But good to know I didn't need to do it for this purpose! And like before, check answer by just printing out a shortened version of a tibble, like dim or names or head.
+
+<b>Corrections, I guess (just limiting answers to the "time" value)</b></font>
+```{r}
+#Making the "tsh_baseline" (Answer_4_base) and "tsh_endpoint" (Answer_4_end) tables; this time you rename the "tsh" variable
+Answer_3 %>% tabyl(time)
+Answer_4_base <- Answer_3 %>% filter(time == "baseline") %>% rename(tsh_baseline = tsh)
+Answer_4_end <- Answer_3 %>% filter(time == "endpoint") %>% rename(tsh_endpoint = tsh)
+
+#Printing
+head(Answer_4_base)
+head(Answer_4_end)
+```
+
+
+(@) __<font color="green">Remove the `time` column from the two datasets. Check that your code did what you expected it to.</font>__
+<br><font color="purple">Answers are correct. I need to be better at doing QA though, sheesh.</font>
+
+<b>Answer from Part 1</b>
+```{r}
+#Remove the "time" column by selecting it out, and save the output as the new dataset
+Answer_4_base <- Answer_4_base %>% select(-time)
+Answer_4_end <- Answer_4_end %>% select(-time)
+
+#Print
+Answer_4_base
+Answer_4_end
+```
+
+
+(@) __<font color="green">Merge the baseline data and endpoint data together as one dataset with separate columns for the baseline and endpoint TSH data. Check that your code did what you expected it to.</font>__
+<br><font color="purple">Considering that I have removed all the other columns already (correcting for what I did), I don't have to do the "by = x, x1, x2" section of the join() function.</font>
+<b>Answer from Part 1</b>
+```{r}
+#Merging time!
+Updated_tsh_data <- full_join(Answer_4_base, Answer_4_end)
+
+#Print
+Updated_tsh_data
+
+#Check dimensions. Because I removed the other columns that are confusing and may not merge data, I should have the same number of rows/observations (indcating the baseline and endpoint data are from one person) and an additional column/variable bc I split tsh into baseline and endpoint vals.
+dim(Answer_4_base)
+dim(Answer_4_end)
+dim(Updated_tsh_data)
+```
+
+
+
+### Method 2
+
+(@) __<font color="green">Use one of the `pivot` commands to make the dataset wide for the TSH values at the two different time points. Check that your code did what you expected it to. </font>__
+<br><font color="purple">Answer is correct. But was the names_prefix addition to the pivot_wider() necessary? I'm confused by what that does.</font>
+<b>Answer from Part 1</b>
+```{r}
+#You gotta use pivot_wider for this to make a WIDE dataset. You're flipping the 'time' column and adding the 'tsh' column values
+tsh_widetime <- tsh %>% pivot_wider(names_from = "time",
+                                      values_from = "tsh")
+#Print
+tsh_widetime
+```
+
+
+
+# TSH values: baseline vs. endpoint
+
+(@) __<font color="green">Make a scatterplot with endpoint TSH values on the vertical axis, baseline TSH values on the horizontal axis, with dots color coded by the `TSH_group_baseline` variable.</font>__
+<br><font color="purple">Answer is correct. Added labels also to better understand the graph.</font>
+
+<b>Answer from Part 1</b>
+```{r}
+ggplot(data = Updated_tsh_data,
+       aes(x = tsh_baseline, 
+           y = tsh_endpoint,
+           color = TSH_group_baseline)) +
+
+  geom_point(alpha = 0.6) +
+  
+  labs(x = "TSH Baseline (mU/L)", 
+       y = "TSH Endpoint (mU/L)",
+       title = "Patient TSH Baseline vs Endpoint Levels")
+```
+
+
+(@) __<font color="green">Describe the association between the baseline and endpoint TSH values. </font>__
+<br><font color="purple">Answer is correct. And, fixing something from an earlier question fixed my earlier issue here with how the legend appeared.</font>
+
+I can't really say there is much of an association between baseline and endpoint TSH values in both baseline groups... But it does seem like baseline group 1 have a lower TSH baseline range than baseline group 2.
+
+(@) __<font color="green">Add a variable called `TSH_group_endpoint` to the dataset categorizing the endpoint TSH values as being in the TSH groups listed below:  </font>__
+<font color="green">
+* `LowNormal` TSH (0.34 to 2.50 mU/L)
+* `HighNormal` TSH (2.51 to 5.60 mU/L)
+* `Elevated` TSH (greater than 5.60 mU/L)
+</font>
+<br><font color="purple">Oh, this is what you were talking about in class...! Considering the categories appeared to show numbers, I gave cut-offs for LowNormal (no lower than 0.34). Is that ok? Otherwise I believe my code is correct.</font>
+
+
+<b>Answer from Part 1</b>
+```{r}
+#So, changing things requires using the mutate function
+Answer_10 <- Updated_tsh_data %>% mutate(
+  TSH_group_endpoint = case_when(
+    tsh_endpoint >= 0.34 & tsh_endpoint <= 2.50 ~ "LowNormal",
+    tsh_endpoint >= 2.51 & tsh_endpoint <= 5.60 ~ "HighNormal",
+    tsh_endpoint > 5.60 ~ "Elevated")
+  )
+
+Answer_10
+```
+
+
+
+(@) __<font color="green">Calculate minimum and maximum summary statistics for the endpoint TSH values stratified by `TSH_group_endpoint`. Do the min and max values agree with the group values listed above?</font>__
+<br><font color="purple">Answers are correct, but I had a legitimately hard time understanding how to use the summarise() function; I see now that if I wanted to pick from any variable/column, I could have used the across() subfunction of summarise() to make the code easier. What does na.rm = TRUE stand for again? Excluding all variables NA or including all variables NA? Also, wow the skim() function looks SO nice.</font>
+
+```{r}
+Answer_10 %>% group_by(TSH_group_endpoint) %>%
+  summarise(min = min(tsh_endpoint), max = max(tsh_endpoint))
+```
+Yes, it does! (That's exciting.)
+
+
+(@) __<font color="green">Make a contingency table of the TSH baseline vs. endpoint groups, that includes row and column totals.</font>__
+<br><font color="purple">Answers are correct. It also looks like, due to how we stratified things (included the 0.34 cut-off) that I have some N/A values. No problem though.</font>
+
+
+<b>Answer from Part 1</b>
+```{r}
+#Am I to assume here that I use the same categorization for tsh_group_baseline as the values in tsh_group_endpoint????? Based on this question, I have to make a tsh_group_baseline first in order for me to compare things...
+
+Answer_12 <- Answer_10 %>% mutate(
+  TSH_group_baseline = case_when(
+    tsh_baseline >= 0.34 & tsh_baseline <= 2.50 ~ "LowNormal baseline",
+    tsh_baseline >= 2.51 & tsh_baseline <= 5.60 ~ "HighNormal baseline",
+    tsh_baseline > 5.60 ~ "Elevated baseline")
+  )
+
+#Print
+Answer_12
+
+#Now I have the TSH_group_baseline stratified, I think I can do a contingency table now
+
+Answer_12 %>% 
+  tabyl(TSH_group_endpoint, TSH_group_baseline) %>% 
+  adorn_totals(c("row", "col"))
+```
+
+
+(@) __<font color="green">What percent of people that started in the high normal TSH group ended in the low normal TSH group? </font>__
+<br><font color="purple">I had a hard time showing the percentages for some reason so I got the wrong answer. I think it was because I wasn't using tabyl...? I just kept getting odd percentages. Oh! I think it's because I did not include the adorn_percentages() subfunction that would add the percentages more appropriately (thus instead of having totals end at 500% or something, it would be at 100%).
+<br><b>Corrections below:</b></font>
+
+```{r}
+Answer_12 %>% 
+  tabyl(TSH_group_baseline,
+        TSH_group_endpoint) %>%
+  adorn_percentages(denominator = "row") %>%
+  adorn_totals(c("row", "col")) %>% 
+  adorn_pct_formatting(digits = 1)
+```
+I have it as 38.5% of the patients due to the lingering N/A patient.
+
+<b>Answer from Part 1</b>
+I have to look at the section of the contingency table where the COLUMN is "High Normal baseline" that intersects with the ROW (endpoint) "LowNormal".
+Based on that, 12.5% percent of people went from a "high normal" TSH baseline to a "low normal" TSH endpoint.
+
+(@) __<font color="green">What percent of people that started in the low normal TSH group ended in the elevated TSH group? </font>__
+<br><font color="purple">Similar issue to Question 12. I had difficulty with creating the percentages so I calculated this quite incorrectly. But, my percentages are a bit different because I had a different cut-off from the answer key.
+<br><b>Corrections below:</b></font>
+37.3% of patients when from low to elevated TSH levels.
+
+
+<b>Answer from Part 1</b>
+I have to look at the section of the contingency table where the COLUMN is "Low Normal baseline" that intersects with the ROW (endpoint) "Elevated".
+Based on that, 23.33% percent of people went from a "low normal" TSH baseline to an "Elevated" TSH endpoint.
